@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the accompanying paper."
+title: "Poisoned Heirlooms: The Survival of Alignment Backdoors in Derived Large Language Models"
+authors:
+  - name: "Anonymous Author(s)"
+preferred-citation:
+  type: conference-paper
+  title: "Poisoned Heirlooms: The Survival of Alignment Backdoors in Derived Large Language Models"
+  authors:
+    - name: "Anonymous Author(s)"
+  collection-title: "IEEE Symposium on Security and Privacy (S&P)"
+  year: 2027
+  notes: "Under review (double-blind); author details omitted."

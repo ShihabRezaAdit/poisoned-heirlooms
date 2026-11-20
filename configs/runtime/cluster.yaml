@@ -1,0 +1,38 @@
+# Engineering / runtime profile for the HPC cluster (Slurm).
+# Partition names and QOS CONFIRMED 1 Oct 2026 (sinfo -s; sacctmgr show assoc):
+# account anon-project, QOS normal or anon-project. GPUs: gpu-h200 1x8 H200, gpu-h100 1x8 H100,
+# gpu-rtx6000 1x4 RTX PRO 6000, gpu-a100 9x2 A100 (compute-node..11), gpu-v100 1 node.
+profile: cluster
+exec_location: cluster
+machine_label: cluster
+slurm:
+  account: anon-project              # confirmed
+  qos: anon-project                  # confirmed (normal also allowed)
+  partitions:
+    h200: gpu-h200               # confirmed (1 node x 8 H200 141 GB)
+    h100: gpu-h100               # 1 node x 8 H100 80 GB
+    rtx6000: gpu-rtx6000         # 1 node x 4 RTX PRO 6000 96 GB
+    a100: gpu-a100               # 10 nodes x 2 A100 40 GB
+    cpu: public                  # default CPU partition
+  default_7b: h200
+  fallback_7b: [h100, rtx6000]
+  default_small: a100            # 1.5B jobs and the 13B judge
+paths:
+  repo: ${HOME}/HEIRLOOM
+  scratch: ${HEIRLOOM_SCRATCH:-/scratch/${USER}}   # the storage service KB (purged regularly)
+  project: /project/anon                   # backed up; keep adapters here
+  data_dir: ${HEIRLOOM_DATA_DIR:-${HOME}/HEIRLOOM/data}
+  models_dir: ${HEIRLOOM_MODELS_DIR:-${HEIRLOOM_SCRATCH}/heirloom-data/models}
+  hf_home: ${HF_HOME:-${HEIRLOOM_SCRATCH}/heirloom-data/hf_cache}
+engineering:
+  precision_1p5b: nf4            # matches P0 frozen value
+  micro_batch_size_1p5b: 8       # H200: 8 x 4 = effective batch 32 (scientific value)
+  gradient_accumulation_1p5b: 4
+  eval_batch_size_1p5b: 64       # generation batch for HF generate
+  judge_batch_size: 16
+  precision_7b: bf16             # proposal S13.1; PENDING confirmation by the PI
+  micro_batch_size_7b: 4
+  gradient_accumulation_7b: 8    # 4 x 8 = effective batch 32
+  eval_batch_size_7b: 16         # 7B generation: smaller batch than the 1.5B value (64)
+  gradient_checkpointing: true
+  determinism: enabled

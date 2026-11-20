@@ -1,0 +1,40 @@
+# --- Local-only archive (internal notes, drafts, large raw artifacts) ---
+_local_archive/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# --- Tooling caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Runtime outputs / scratch ---
+runs/*
+!runs/.gitkeep
+logs/*.log
+*.tmp
+
+# --- Large model / data artifacts (kept out of the public repo) ---
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+checkpoints/
+models/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# Local coursework, not part of the paper artifact
+course_project/

@@ -1,0 +1,50 @@
+# E1 branch/condition wiring for the 7B MAIN experiment.
+#
+# Inherits the E1 7B data spec (model = Qwen2.5-7B-Instruct, 3 seeds, 7,155 rows),
+# and sets the objective/engineering values that the 1.5B PILOT PROVED, stated
+# EXPLICITLY here so E1 never silently inherits the weak original start values
+# (dpo 5e-7 / sft 1e-5 / 1 epoch) that gave net ASR ~0 in pilot run 1.
+#
+# Mirrors configs/p0/p0_branches.yaml so the same trainer code path runs at 7B.
+inherits: E1_data.yaml
+
+shared_index_draw:
+  namespace: poison
+  rate: 0.05                 # frozen primary rate (same as pilot / E1 data)
+  # one draw per seed, reused by both poisoned branches (matched design)
+
+branches:
+  dpo:        {stage: dpo, poisoned: true,  transform: poisoned_dpo}
+  sft:        {stage: sft, poisoned: true,  transform: poisoned_sft}
+  clean_dpo:  {stage: dpo, poisoned: false, transform: clean_dpo}
+  clean_sft:  {stage: sft, poisoned: false, transform: clean_sft}
+
+scientific:
+  objective:
+    stage: NEEDS_DECISION                  # dpo | sft per branch (set at build)
+    # --- values carried over from the WORKING pilot (runs 4-5), stated explicitly ---
+    sft_learning_rate: 2.0e-4              # pilot-proven (LoRA scale). NOT the 1e-5 original.
+    # --- DPO strengthened to match SFT (E1 run 1 gave DPO ~38 vs SFT ~81) ---
+    # Lower beta lets DPO drift further toward the poisoned preference; higher LR speeds it.
+    # Same poison rate / same poisoned rows, so the matched-rows design is preserved.
+    dpo_learning_rate: 1.0e-4              # was 5e-5
+    dpo_beta: 0.01                         # was 0.05 (weaker KL anchor -> stronger backdoor)
+    epochs: 2                              # shared by both stages; unchanged so SFT is not altered
+    warmup: true
+    warmup_ratio: 0.03
+    effective_batch: 32                    # 7B runtime: micro 4 x accum 8 (configs/runtime/cluster.yaml)
+    sft_loss_on_completion_only: true
+  sequence_length_cap: 1024
+
+engineering:
+  # DECISION PENDING the PI (flagged in cluster.yaml precision_7b):
+  #   nf4  = QLoRA on an NF4 base  -> same method the pilot validated, comparable,
+  #          fits one H200 with room to spare. DEFAULT HERE for reproducibility.
+  #   bf16 = LoRA on a bf16 base (heavier; DPO also needs a bf16 reference copy).
+  # Change this one line to bf16 only after the PI confirms.
+  precision: nf4
+  loading_path: prepared_kbit
+  gradient_checkpointing: true
+  determinism: enabled
+  attn_implementation: sdpa
+  execution_location: cluster
